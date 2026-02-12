@@ -42,7 +42,7 @@ extension UIViewController {
         let screenName = String(describing: type(of: self))
         
         Task {
-            LogGobbler.track(
+            AppStats.track(
                 "screen_view",
                 properties: ["screen_name": screenName]
             )
@@ -64,7 +64,7 @@ public struct TrackedScreen: ViewModifier {
     public func body(content: Content) -> some View {
         content
             .onAppear {
-                LogGobbler.track(
+                AppStats.track(
                     "screen_view",
                     properties: ["screen_name": screenName]
                 )

@@ -13,5 +13,5 @@ enum SDKInfo {
     static let buildNumber = "1"
     
     /// SDK identifier
-    static let identifier = "com.onethum.loggobbler"
+    static let identifier = "com.onethum.appstats"
 }

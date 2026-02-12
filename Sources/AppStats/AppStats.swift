@@ -1,4 +1,4 @@
-// LogGobbler SDK - Main Entry Point
+// AppStats SDK - Main Entry Point
 // Copyright © 2026 One Thum Software
 
 import Foundation
@@ -8,20 +8,20 @@ import UIKit
 import AppKit
 #endif
 
-/// The main LogGobbler SDK interface.
+/// The main AppStats SDK interface.
 ///
-/// LogGobbler provides lightweight, privacy-first analytics for iOS, macOS, and visionOS apps.
+/// AppStats provides lightweight, privacy-first analytics for iOS, macOS, and visionOS apps.
 /// Configure once in your app's launch sequence and the SDK automatically tracks app lifecycle,
 /// screen views, and crashes.
 ///
 /// Example usage:
 /// ```swift
-/// import LogGobbler
+/// import AppStats
 ///
 /// @main
 /// struct MyApp: App {
 ///     init() {
-///         LogGobbler.configure(apiKey: "lg_live_xxxxxxxxxxxx")
+///         AppStats.configure(apiKey: "as_live_xxxxxxxxxxxx")
 ///     }
 ///
 ///     var body: some Scene {
@@ -32,17 +32,17 @@ import AppKit
 /// }
 /// ```
 @MainActor
-public final class LogGobbler {
+public final class AppStats {
     
     // MARK: - Public API
     
-    /// Configure the LogGobbler SDK with your API key.
+    /// Configure the AppStats SDK with your API key.
     ///
     /// This should be called once during app launch, typically in your app delegate's
     /// `application(_:didFinishLaunchingWithOptions:)` or in your SwiftUI `App` initializer.
     ///
     /// - Parameters:
-    ///   - apiKey: Your LogGobbler API key (e.g., "lg_live_xxxxxxxxxxxx")
+    ///   - apiKey: Your AppStats API key (e.g., "as_live_xxxxxxxxxxxx")
     ///   - autoTrackScreens: Whether to automatically track screen views (default: true)
     ///   - flushInterval: How often to send events to the server in seconds (default: 30)
     public static func configure(
@@ -56,7 +56,7 @@ public final class LogGobbler {
             flushInterval: flushInterval
         )
         
-        shared = LogGobbler(configuration: config)
+        shared = AppStats(configuration: config)
         
         // All heavy initialization happens on background queue
         Task.detached(priority: .utility) {
@@ -71,7 +71,7 @@ public final class LogGobbler {
     ///   - properties: Optional key-value properties (strings, numbers, booleans only)
     public static func track(_ eventName: String, properties: [String: Any]? = nil) {
         guard let instance = shared else {
-            Logger.warning("LogGobbler not configured - call configure() first")
+            Logger.warning("AppStats not configured - call configure() first")
             return
         }
         
@@ -107,7 +107,7 @@ public final class LogGobbler {
     
     // MARK: - Internal State
     
-    private static var shared: LogGobbler?
+    private static var shared: AppStats?
     
     private let configuration: Configuration
     private var eventCollector: EventCollector?
@@ -160,10 +160,10 @@ public final class LogGobbler {
             await trackAppLaunch()
             
             self.isInitialized = true
-            Logger.info("LogGobbler SDK initialized successfully")
+            Logger.info("AppStats SDK initialized successfully")
             
         } catch {
-            Logger.error("LogGobbler initialization failed: \(error)")
+            Logger.error("AppStats initialization failed: \(error)")
             self.isDisabled = true
         }
     }
@@ -309,11 +309,11 @@ public final class LogGobbler {
     
     private func handleError(_ error: Error) {
         errorCount += 1
-        Logger.error("LogGobbler error: \(error)")
+        Logger.error("AppStats error: \(error)")
         
         // Kill switch: disable after 5 consecutive errors
         if errorCount >= 5 {
-            Logger.error("LogGobbler disabled due to repeated errors")
+            Logger.error("AppStats disabled due to repeated errors")
             isDisabled = true
         }
     }
@@ -321,7 +321,7 @@ public final class LogGobbler {
 
 // MARK: - Configuration
 
-extension LogGobbler {
+extension AppStats {
     struct Configuration {
         let apiKey: String
         let autoTrackScreens: Bool
@@ -332,7 +332,7 @@ extension LogGobbler {
             apiKey: String,
             autoTrackScreens: Bool,
             flushInterval: TimeInterval,
-            baseURL: URL = URL(string: "https://api.loggobbler.com")!
+            baseURL: URL = URL(string: "https://api.appstats.app")!
         ) {
             self.apiKey = apiKey
             self.autoTrackScreens = autoTrackScreens
@@ -347,19 +347,19 @@ extension LogGobbler {
 private enum Logger {
     static func info(_ message: String) {
         #if DEBUG
-        print("[LogGobbler] ℹ️ \(message)")
+        print("[AppStats] ℹ️ \(message)")
         #endif
     }
     
     static func warning(_ message: String) {
         #if DEBUG
-        print("[LogGobbler] ⚠️ \(message)")
+        print("[AppStats] ⚠️ \(message)")
         #endif
     }
     
     static func error(_ message: String) {
         #if DEBUG
-        print("[LogGobbler] ❌ \(message)")
+        print("[AppStats] ❌ \(message)")
         #endif
     }
 }

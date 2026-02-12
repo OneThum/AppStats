@@ -6,7 +6,7 @@ import Foundation
 import Compression
 #endif
 
-/// Handles network requests to the LogGobbler ingestion API
+/// Handles network requests to the AppStats ingestion API
 actor NetworkManager {
     
     // MARK: - Properties

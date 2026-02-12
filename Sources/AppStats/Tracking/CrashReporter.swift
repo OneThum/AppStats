@@ -139,7 +139,7 @@ enum CrashReporter {
     private static func getCrashFilePath() -> String? {
         let paths = NSSearchPathForDirectoriesInDomains(.applicationSupportDirectory, .userDomainMask, true)
         guard let appSupport = paths.first else { return nil }
-        let lgDirectory = (appSupport as NSString).appendingPathComponent("LogGobbler")
+        let lgDirectory = (appSupport as NSString).appendingPathComponent("AppStats")
         return (lgDirectory as NSString).appendingPathComponent("crash.txt")
     }
     

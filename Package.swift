@@ -4,7 +4,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "LogGobbler",
+    name: "AppStats",
     platforms: [
         .iOS(.v16),
         .macOS(.v13),
@@ -12,8 +12,8 @@ let package = Package(
     ],
     products: [
         .library(
-            name: "LogGobbler",
-            targets: ["LogGobbler"]
+            name: "AppStats",
+            targets: ["AppStats"]
         )
     ],
     dependencies: [
@@ -21,17 +21,17 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "LogGobbler",
+            name: "AppStats",
             dependencies: [],
-            path: "Sources/LogGobbler",
+            path: "Sources/AppStats",
             swiftSettings: [
                 .enableExperimentalFeature("StrictConcurrency")
             ]
         ),
         .testTarget(
-            name: "LogGobblerTests",
-            dependencies: ["LogGobbler"],
-            path: "Tests/LogGobblerTests"
+            name: "AppStatsTests",
+            dependencies: ["AppStats"],
+            path: "Tests/AppStatsTests"
         )
     ],
     swiftLanguageModes: [.v6]

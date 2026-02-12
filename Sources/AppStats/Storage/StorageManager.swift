@@ -17,7 +17,7 @@ actor StorageManager {
     // MARK: - Initialization
     
     init() throws {
-        // Create LogGobbler directory in Application Support
+        // Create AppStats directory in Application Support
         let appSupport = try fileManager.url(
             for: .applicationSupportDirectory,
             in: .userDomainMask,
@@ -25,7 +25,7 @@ actor StorageManager {
             create: true
         )
         
-        self.storageDirectory = appSupport.appendingPathComponent("LogGobbler", isDirectory: true)
+        self.storageDirectory = appSupport.appendingPathComponent("AppStats", isDirectory: true)
         self.databaseURL = storageDirectory.appendingPathComponent("events.json")
         
         // Create directory if needed

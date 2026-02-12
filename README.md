@@ -1,6 +1,6 @@
-# LogGobbler SDK
+# AppStats SDK
 
-The official Swift SDK for LogGobbler analytics.
+The official Swift SDK for AppStats analytics.
 
 ## Features
 
@@ -16,17 +16,17 @@ The official Swift SDK for LogGobbler analytics.
 
 ### Swift Package Manager
 
-Add LogGobbler to your `Package.swift`:
+Add AppStats to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/OneThum/LogGobbler.git", from: "1.0.0")
+    .package(url: "https://github.com/OneThum/AppStats.git", from: "1.0.0")
 ]
 ```
 
 Or in Xcode:
 1. File → Add Package Dependencies
-2. Enter: `https://github.com/OneThum/LogGobbler.git`
+2. Enter: `https://github.com/OneThum/AppStats.git`
 3. Select version: `1.0.0` or later
 
 ## Quick Start
@@ -36,12 +36,12 @@ Or in Xcode:
 In your app's entry point:
 
 ```swift
-import LogGobbler
+import AppStats
 
 @main
 struct MyApp: App {
     init() {
-        LogGobbler.configure(apiKey: "lg_live_xxxxxxxxxxxx")
+        AppStats.configure(apiKey: "as_live_xxxxxxxxxxxx")
     }
     
     var body: some Scene {
@@ -56,7 +56,7 @@ For UIKit apps:
 
 ```swift
 import UIKit
-import LogGobbler
+import AppStats
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -65,7 +65,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
-        LogGobbler.configure(apiKey: "lg_live_xxxxxxxxxxxx")
+        AppStats.configure(apiKey: "as_live_xxxxxxxxxxxx")
         return true
     }
 }
@@ -87,13 +87,13 @@ The SDK automatically tracks:
 Track custom events with optional properties:
 
 ```swift
-LogGobbler.track("purchase_completed", properties: [
+AppStats.track("purchase_completed", properties: [
     "product_id": "pro_annual",
     "price": 49.99,
     "currency": "USD"
 ])
 
-LogGobbler.track("export_finished", properties: [
+AppStats.track("export_finished", properties: [
     "format": "pdf",
     "pages": 12
 ])
@@ -113,15 +113,15 @@ NavigationStack {
 For UIKit, disable automatic tracking and track manually:
 
 ```swift
-LogGobbler.configure(
-    apiKey: "lg_live_xxxxxxxxxxxx",
+AppStats.configure(
+    apiKey: "as_live_xxxxxxxxxxxx",
     autoTrackScreens: false
 )
 
 // Then manually track screens:
 override func viewDidAppear(_ animated: Bool) {
     super.viewDidAppear(animated)
-    LogGobbler.track("screen_view", properties: ["screen_name": "Settings"])
+    AppStats.track("screen_view", properties: ["screen_name": "Settings"])
 }
 ```
 
@@ -130,8 +130,8 @@ override func viewDidAppear(_ animated: Bool) {
 Set properties that will be included with all events:
 
 ```swift
-LogGobbler.setUserProperty("subscription_tier", value: "pro")
-LogGobbler.setUserProperty("theme", value: "dark")
+AppStats.setUserProperty("subscription_tier", value: "pro")
+AppStats.setUserProperty("theme", value: "dark")
 ```
 
 ### Manual Flush
@@ -139,7 +139,7 @@ LogGobbler.setUserProperty("theme", value: "dark")
 Force an immediate flush of queued events:
 
 ```swift
-LogGobbler.flush()
+AppStats.flush()
 ```
 
 Useful in:
@@ -150,8 +150,8 @@ Useful in:
 ## Configuration Options
 
 ```swift
-LogGobbler.configure(
-    apiKey: "lg_live_xxxxxxxxxxxx",    // Required: Your API key
+AppStats.configure(
+    apiKey: "as_live_xxxxxxxxxxxx",    // Required: Your API key
     autoTrackScreens: true,             // Optional: Auto-track screen views (default: true)
     flushInterval: 30                   // Optional: Flush interval in seconds (default: 30)
 )
@@ -211,7 +211,7 @@ The SDK follows strict defensive programming principles:
 
 ## Privacy
 
-LogGobbler is built with privacy as a first-class feature:
+AppStats is built with privacy as a first-class feature:
 
 - **No tracking across apps**: Each session gets a random UUID
 - **IP-based geolocation only**: City-level precision, processed server-side
@@ -231,8 +231,8 @@ LogGobbler is built with privacy as a first-class feature:
 
 1. Check your API key is correct
 2. Ensure you have network connectivity
-3. Check Xcode console for `[LogGobbler]` logs (debug builds only)
-4. Verify the app bundle ID matches your LogGobbler account
+3. Check Xcode console for `[AppStats]` logs (debug builds only)
+4. Verify the app bundle ID matches your AppStats account
 
 ### Build errors
 
@@ -242,9 +242,9 @@ LogGobbler is built with privacy as a first-class feature:
 
 ## Support
 
-- **Documentation**: https://docs.loggobbler.com
-- **Dashboard**: https://app.loggobbler.com
-- **Issues**: https://github.com/OneThum/LogGobbler/issues
+- **Documentation**: https://docs.appstats.com
+- **Dashboard**: https://app.appstats.com
+- **Issues**: https://github.com/OneThum/AppStats/issues
 
 ## License
 

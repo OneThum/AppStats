@@ -97,7 +97,7 @@ actor EventCollector {
             
         } catch {
             // Silent failure - not critical
-            print("[LogGobbler] Failed to load persisted events: \(error)")
+            print("[AppStats] Failed to load persisted events: \(error)")
         }
     }
 }
