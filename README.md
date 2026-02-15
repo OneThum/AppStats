@@ -33,7 +33,9 @@ Or in Xcode:
 
 ### 1. Configure the SDK
 
-In your app's entry point:
+Initialize AppStats at your app's launch. Both approaches work equally well:
+
+#### SwiftUI Apps
 
 ```swift
 import AppStats
@@ -52,7 +54,7 @@ struct MyApp: App {
 }
 ```
 
-For UIKit apps:
+#### UIKit Apps
 
 ```swift
 import UIKit
@@ -70,6 +72,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 }
 ```
+
+> **Note**: Both initialization locations (`App.init()` and `AppDelegate.application(_:didFinishLaunchingWithOptions:)`) are equally valid. The SDK performs all heavy work on background threads, ensuring < 5ms impact regardless of where you initialize.
 
 ### 2. That's it!
 
@@ -239,6 +243,41 @@ AppStats is built with privacy as a first-class feature:
 - Ensure you're using Xcode 15+ with Swift 6.0+
 - Clean build folder: `Product → Clean Build Folder`
 - Delete derived data: `rm -rf ~/Library/Developer/Xcode/DerivedData`
+
+## FAQ
+
+### Where should I initialize AppStats?
+
+**Both locations work equally well:**
+- **SwiftUI**: `App.init()` is the modern approach
+- **UIKit**: `AppDelegate.application(_:didFinishLaunchingWithOptions:)` is the traditional approach
+- **Hybrid apps**: Use whichever is clearest in your codebase
+
+The SDK spawns all heavy work on background threads immediately, so initialization takes < 5ms regardless of location.
+
+### Will AppStats slow down my app launch?
+
+No. The SDK is designed for zero launch impact:
+- Configuration takes < 1ms (just stores settings)
+- All heavy initialization (storage, networking, crash reporting) happens on background threads
+- Total overhead: < 5ms (measured with Instruments)
+
+### What happens if my backend is down?
+
+The SDK is resilient and handles backend issues gracefully:
+- Events queue locally (up to 500 events, 10MB limit)
+- Automatic retry with exponential backoff
+- Circuit breaker prevents battery drain
+- After 5 consecutive errors, SDK self-disables to protect your app
+- **Your app will never crash due to AppStats issues**
+
+### Can I use AppStats in multiple apps?
+
+Yes! Each app gets its own API key. Generate a new key for each app in the AppStats dashboard.
+
+### Does AppStats work offline?
+
+Yes. Events are queued locally and automatically sent when connectivity is restored. Events persist for up to 48 hours.
 
 ## Support
 
