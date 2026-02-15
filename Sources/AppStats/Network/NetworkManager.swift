@@ -55,8 +55,8 @@ actor NetworkManager {
         let url = baseURL.appendingPathComponent("/v1/ingest")
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.setValue(apiKey, forHTTPHeaderField: "X-LG-Key")
-        request.setValue(SDKInfo.version, forHTTPHeaderField: "X-LG-SDK-Version")
+        request.setValue(apiKey, forHTTPHeaderField: "X-AS-Key")
+        request.setValue(SDKInfo.version, forHTTPHeaderField: "X-AS-SDK-Version")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("gzip", forHTTPHeaderField: "Content-Encoding")
         
