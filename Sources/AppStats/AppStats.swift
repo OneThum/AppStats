@@ -347,7 +347,39 @@ public final class AppStats {
     
     private func handleError(_ error: Error) {
         errorCount += 1
-        Logger.error("AppStats error: \(error)")
+        
+        // Provide specific error messages based on error type
+        if let urlError = error as? URLError {
+            switch urlError.code {
+            case .timedOut:
+                Logger.error("Request timed out - check network connection")
+            case .notConnectedToInternet:
+                Logger.error("No internet connection - events will be queued")
+            case .cannotConnectToHost:
+                Logger.error("Cannot connect to server - will retry later")
+            case .networkConnectionLost:
+                Logger.error("Network connection lost - will retry")
+            case .dnsLookupFailed:
+                Logger.error("DNS lookup failed - check network settings")
+            default:
+                Logger.error("Network error: \(urlError.localizedDescription)")
+            }
+        } else if let networkError = error as? NetworkError {
+            switch networkError {
+            case .inBackoff:
+                Logger.error("In backoff mode due to repeated failures")
+            case .clientError(let code):
+                Logger.error("Client error \(code) - check API key configuration")
+            case .serverError(let code):
+                Logger.error("Server error \(code) - service may be unavailable")
+            case .compressionFailed:
+                Logger.error("Failed to compress event data")
+            default:
+                Logger.error("AppStats error: \(error)")
+            }
+        } else {
+            Logger.error("AppStats error: \(error)")
+        }
         
         // Kill switch: disable after 5 consecutive errors
         if errorCount >= 5 {

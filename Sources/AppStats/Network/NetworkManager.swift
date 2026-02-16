@@ -27,9 +27,10 @@ actor NetworkManager {
         self.baseURL = baseURL
         
         // Configure URL session with timeout
+        // More aggressive timeouts for mobile networks
         let config = URLSessionConfiguration.default
-        config.timeoutIntervalForRequest = 30
-        config.timeoutIntervalForResource = 60
+        config.timeoutIntervalForRequest = 15  // Reduced from 30s for faster failure detection
+        config.timeoutIntervalForResource = 30 // Reduced from 60s
         config.networkServiceType = .background
         
         self.session = URLSession(configuration: config)
@@ -39,6 +40,11 @@ actor NetworkManager {
     
     /// Send a batch of events to the ingestion API
     func sendEvents(_ events: [Event]) async throws {
+        try await sendEventsWithRetry(events, retryCount: 0)
+    }
+    
+    /// Internal method with retry logic for transient failures
+    private func sendEventsWithRetry(_ events: [Event], retryCount: Int) async throws {
         // Check circuit breaker
         if isInBackoff, let until = backoffUntil, Date() < until {
             throw NetworkError.inBackoff
@@ -98,9 +104,39 @@ actor NetworkManager {
                 throw NetworkError.unexpectedStatusCode(httpResponse.statusCode)
             }
             
+        } catch let error as URLError {
+            // Handle network errors with retry logic for transient failures
+            let shouldRetry = shouldRetryError(error) && retryCount < 2
+            
+            if shouldRetry {
+                // Exponential backoff: 1s, 2s
+                let delaySec = pow(2.0, Double(retryCount))
+                try await Task.sleep(nanoseconds: UInt64(delaySec * 1_000_000_000))
+                
+                // Retry the request
+                return try await sendEventsWithRetry(events, retryCount: retryCount + 1)
+            } else {
+                // No more retries or non-retryable error
+                handleFailure()
+                throw error
+            }
         } catch {
             handleFailure()
             throw error
+        }
+    }
+    
+    /// Determine if a URLError should trigger a retry
+    private func shouldRetryError(_ error: URLError) -> Bool {
+        switch error.code {
+        case .timedOut,
+             .cannotConnectToHost,
+             .networkConnectionLost,
+             .dnsLookupFailed,
+             .notConnectedToInternet:
+            return true
+        default:
+            return false
         }
     }
     
@@ -151,7 +187,8 @@ actor NetworkManager {
 
 // MARK: - Errors
 
-enum NetworkError: Error {
+/// Network-related errors
+public enum NetworkError: Error {
     case invalidResponse
     case clientError(Int)
     case serverError(Int)
