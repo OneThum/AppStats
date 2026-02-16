@@ -332,7 +332,7 @@ extension AppStats {
             apiKey: String,
             autoTrackScreens: Bool,
             flushInterval: TimeInterval,
-            baseURL: URL = URL(string: "https://api.appstats.app")!
+            baseURL: URL = URL(string: "https://ingest.appstats.app")!
         ) {
             self.apiKey = apiKey
             self.autoTrackScreens = autoTrackScreens

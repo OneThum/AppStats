@@ -52,7 +52,7 @@ actor NetworkManager {
         }
         
         // Prepare request
-        let url = baseURL.appendingPathComponent("/v1/ingest")
+        let url = baseURL.appendingPathComponent("v1").appendingPathComponent("ingest")
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue(apiKey, forHTTPHeaderField: "X-AS-Key")
