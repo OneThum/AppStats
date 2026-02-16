@@ -20,14 +20,14 @@ Add AppStats to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/OneThum/AppStats.git", from: "1.0.1")
+    .package(url: "https://github.com/OneThum/AppStats.git", from: "1.0.2")
 ]
 ```
 
 Or in Xcode:
 1. File → Add Package Dependencies
 2. Enter: `https://github.com/OneThum/AppStats.git`
-3. Select version: `1.0.1` or later
+3. Select version: `1.0.2` or later
 
 ## Quick Start
 
@@ -231,18 +231,51 @@ AppStats is built with privacy as a first-class feature:
 
 ## Troubleshooting
 
+### ⚠️ "AppStats not configured" warning at launch
+
+**This warning is harmless and expected.**
+
+You may see this in your Xcode console:
+```
+[AppStats] ⚠️ AppStats not configured - call configure() first
+[AppStats] ℹ️ AppStats SDK initialized successfully
+```
+
+**Why it happens:**
+- The warning appears briefly between when AppStats is imported and when `configure()` is called
+- This is normal SDK initialization behavior
+- If followed immediately by "SDK initialized successfully", everything is working correctly
+
+**To minimize this warning:**
+1. Call `AppStats.configure()` as the **first line** in your `application(_:didFinishLaunchingWithOptions:)` or `App.init()`
+2. Ensure you're not calling any AppStats tracking methods before configuration
+
+**Example (UIKit):**
+```swift
+func application(_ application: UIApplication, 
+                 didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+    // Configure AppStats FIRST, before any other setup
+    AppStats.configure(apiKey: "as_live_xxxxxxxxxxxx")
+    
+    // Other initialization...
+    return true
+}
+```
+
 ### Events not appearing in dashboard
 
 1. Check your API key is correct
 2. Ensure you have network connectivity
 3. Check Xcode console for `[AppStats]` logs (debug builds only)
 4. Verify the app bundle ID matches your AppStats account
+5. Wait 30-60 seconds after events are tracked (default flush interval)
 
 ### Build errors
 
 - Ensure you're using Xcode 15+ with Swift 6.0+
 - Clean build folder: `Product → Clean Build Folder`
 - Delete derived data: `rm -rf ~/Library/Developer/Xcode/DerivedData`
+- If updating from an older version, remove the package and re-add it: File → Add Package Dependencies
 
 ## FAQ
 
