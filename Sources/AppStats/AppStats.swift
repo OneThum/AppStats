@@ -56,11 +56,15 @@ public final class AppStats {
             flushInterval: flushInterval
         )
         
-        shared = AppStats(configuration: config)
+        let instance = AppStats(configuration: config)
+        instance.isInitializing = true
+        
+        // Set shared instance AFTER marking as initializing to prevent race conditions
+        shared = instance
         
         // All heavy initialization happens on background queue
         Task.detached(priority: .utility) {
-            await shared?.initialize()
+            await instance.initialize()
         }
     }
     
@@ -75,8 +79,9 @@ public final class AppStats {
             return
         }
         
+        // Events are automatically queued during initialization, so no warning needed
         Task {
-            await instance.trackEvent(eventName, properties: properties)
+            await instance.queueOrTrackEvent(eventName, properties: properties)
         }
     }
     
@@ -115,8 +120,10 @@ public final class AppStats {
     private var storageManager: StorageManager?
     private var sessionID: UUID
     private var isInitialized = false
+    private var isInitializing = false
     private var isDisabled = false
     private var errorCount = 0
+    private var pendingEvents: [(eventName: String, properties: [String: Any]?)] = []
     
     // MARK: - Initialization
     
@@ -159,16 +166,47 @@ public final class AppStats {
             // Track app launch
             await trackAppLaunch()
             
+            // Mark initialization as complete
             self.isInitialized = true
+            self.isInitializing = false
             Logger.info("AppStats SDK initialized successfully")
+            
+            // Process any events that were queued during initialization
+            await processPendingEvents()
             
         } catch {
             Logger.error("AppStats initialization failed: \(error)")
             self.isDisabled = true
+            self.isInitializing = false
+            self.pendingEvents.removeAll()
         }
     }
     
     // MARK: - Event Tracking
+    
+    private func queueOrTrackEvent(_ eventName: String, properties: [String: Any]?) async {
+        // If still initializing, queue the event for later
+        if isInitializing {
+            pendingEvents.append((eventName: eventName, properties: properties))
+            return
+        }
+        
+        // Otherwise track immediately
+        await trackEvent(eventName, properties: properties)
+    }
+    
+    private func processPendingEvents() async {
+        guard !pendingEvents.isEmpty else { return }
+        
+        Logger.info("Processing \(pendingEvents.count) pending event(s)")
+        
+        let events = pendingEvents
+        pendingEvents.removeAll()
+        
+        for event in events {
+            await trackEvent(event.eventName, properties: event.properties)
+        }
+    }
     
     private func trackEvent(_ eventName: String, properties: [String: Any]?) async {
         guard !isDisabled, isInitialized, let eventCollector = eventCollector else {
