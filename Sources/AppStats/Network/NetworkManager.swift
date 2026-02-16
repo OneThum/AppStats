@@ -58,16 +58,14 @@ actor NetworkManager {
         request.setValue(apiKey, forHTTPHeaderField: "X-AS-Key")
         request.setValue(SDKInfo.version, forHTTPHeaderField: "X-AS-SDK-Version")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("gzip", forHTTPHeaderField: "Content-Encoding")
         
         // Encode events to JSON
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         let jsonData = try encoder.encode(events)
         
-        // Compress with gzip
-        let compressedData = try compressGzip(jsonData)
-        request.httpBody = compressedData
+        // Send uncompressed - compression was causing issues with Content-Encoding mismatch
+        request.httpBody = jsonData
         
         // Send request
         do {
