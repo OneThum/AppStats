@@ -58,15 +58,15 @@ actor NetworkManager {
         request.setValue(apiKey, forHTTPHeaderField: "X-AS-Key")
         request.setValue(SDKInfo.version, forHTTPHeaderField: "X-AS-SDK-Version")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("gzip", forHTTPHeaderField: "Content-Encoding")
+        request.setValue("deflate", forHTTPHeaderField: "Content-Encoding")
         
         // Encode events to JSON
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         let jsonData = try encoder.encode(events)
         
-        // Compress with gzip
-        let compressedData = try compressGzip(jsonData)
+        // Compress with deflate/zlib
+        let compressedData = try compressDeflate(jsonData)
         request.httpBody = compressedData
         
         // Send request
@@ -119,7 +119,7 @@ actor NetworkManager {
         }
     }
     
-    private func compressGzip(_ data: Data) throws -> Data {
+    private func compressDeflate(_ data: Data) throws -> Data {
         #if canImport(Compression)
         return try data.withUnsafeBytes { (sourcePtr: UnsafeRawBufferPointer) -> Data in
             let bufferSize = data.count
