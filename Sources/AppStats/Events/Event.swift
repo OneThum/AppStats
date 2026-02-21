@@ -8,6 +8,8 @@ public struct Event: Codable, Sendable {
     
     /// Event type classification
     public enum EventType: String, Codable, Sendable {
+        case sessionStart = "session_start"
+        case sessionEnd = "session_end"
         case screenView = "screen_view"
         case appLaunch = "app_launch"
         case appBackground = "app_background"

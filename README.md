@@ -20,14 +20,14 @@ Add AppStats to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/OneThum/AppStats.git", from: "1.0.4")
+    .package(url: "https://github.com/OneThum/AppStats.git", from: "1.0.5")
 ]
 ```
 
 Or in Xcode:
 1. File → Add Package Dependencies
 2. Enter: `https://github.com/OneThum/AppStats.git`
-3. Select version: `1.0.4` or later
+3. Select version: `1.0.5` or later
 
 ## Quick Start
 
@@ -78,11 +78,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 ### 2. That's it!
 
 The SDK automatically tracks:
+- ✅ Session start and end (mapped to foreground/background lifecycle)
 - ✅ App launches
 - ✅ Screen views (UIKit and SwiftUI)
 - ✅ App lifecycle (foreground/background)
 - ✅ Crashes with stack traces
 - ✅ Device and OS information
+- ✅ Background flush (uses `beginBackgroundTask` — no developer code needed)
 
 ## Manual Tracking
 
@@ -143,29 +145,13 @@ AppStats.setUserProperty("theme", value: "dark")
 Force an immediate flush of queued events:
 
 ```swift
-// Fire-and-forget (non-async contexts)
 AppStats.flush()
 
-// Awaitable — use this in async contexts so the flush completes
-// before the OS can suspend your app (e.g. .background scene phase)
+// Or in async contexts:
 await AppStats.flushAsync()
 ```
 
-Recommended usage:
-
-```swift
-// SwiftUI — flush when app enters background
-.onChange(of: scenePhase) { _, phase in
-    if phase == .background {
-        Task { await AppStats.flushAsync() }
-    }
-}
-
-// UIKit — flush before termination
-func applicationWillTerminate(_ application: UIApplication) {
-    Task { await AppStats.flushAsync() }
-}
-```
+> **Note**: You do *not* need to flush manually when the app enters the background. The SDK automatically flushes on background entry using `beginBackgroundTask` to ensure the OS gives it time to complete the network send.
 
 ## Configuration Options
 
@@ -183,10 +169,12 @@ AppStats.configure(
 
 | Event Type | Trigger | Data Captured |
 |------------|---------|---------------|
-| `app_launch` | App starts | Cold/warm launch, version, build, device info |
+| `session_start` | App launches or returns to foreground | Version, device info, new session ID |
+| `session_end` | App enters background | Session ID |
+| `app_launch` | App cold/warm start | Version, build, device info |
 | `screen_view` | View appears | Screen name, timestamp |
-| `app_background` | App backgrounds | Session duration, screen count |
-| `app_foreground` | App foregrounds | Time in background |
+| `app_background` | App backgrounds | Session duration |
+| `app_foreground` | App returns to foreground | New session ID |
 | `crash` | Signal/exception | Stack trace, device state, memory |
 
 ### Device Information

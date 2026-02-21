@@ -240,7 +240,20 @@ public final class AppStats {
         guard let eventCollector = eventCollector else { return }
         
         do {
-            let event = Event(
+            // Emit session_start first — this is what the live dashboard
+            // listens for to count active sessions and place map pins.
+            let sessionStart = Event(
+                type: .sessionStart,
+                sessionID: sessionID,
+                properties: [
+                    "app_version": AppInfo.version,
+                    "os_version": DeviceInfo.osVersion,
+                    "device_model": DeviceInfo.deviceModel
+                ]
+            )
+            try await eventCollector.collect(sessionStart)
+
+            let launch = Event(
                 type: .appLaunch,
                 sessionID: sessionID,
                 properties: [
@@ -250,8 +263,7 @@ public final class AppStats {
                     "device_model": DeviceInfo.deviceModel
                 ]
             )
-            
-            try await eventCollector.collect(event)
+            try await eventCollector.collect(launch)
             
         } catch {
             handleError(error)
@@ -305,19 +317,69 @@ public final class AppStats {
     }
     
     private func handleAppBackground() async {
-        // Flush events before backgrounding
+        // Request time from the OS to finish the network send before suspend.
+        // Without this, the unstructured Task from the notification observer can
+        // be killed mid-flight and events are silently lost.
+        #if canImport(UIKit) && !os(watchOS)
+        let app = await UIApplication.shared
+        var bgTaskID = UIBackgroundTaskIdentifier.invalid
+        bgTaskID = await app.beginBackgroundTask(withName: "AppStats.flush") {
+            // Expiration handler — clean up if we ran out of time
+            Task { @MainActor in
+                if bgTaskID != .invalid {
+                    UIApplication.shared.endBackgroundTask(bgTaskID)
+                    bgTaskID = .invalid
+                }
+            }
+        }
+        #endif
+
+        // Track session end + background event, then flush everything
+        if let eventCollector = eventCollector, !isDisabled, isInitialized {
+            let sessionEnd = Event(type: .sessionEnd, sessionID: sessionID)
+            try? await eventCollector.collect(sessionEnd)
+            let background = Event(type: .appBackground, sessionID: sessionID)
+            try? await eventCollector.collect(background)
+        }
         await flushEvents()
-        
-        // Track background event
-        await trackEvent("app_background", properties: nil)
+
+        #if canImport(UIKit) && !os(watchOS)
+        let taskToEnd = bgTaskID
+        Task { @MainActor in
+            if taskToEnd != .invalid {
+                UIApplication.shared.endBackgroundTask(taskToEnd)
+            }
+        }
+        #endif
     }
     
     private func handleAppForeground() async {
-        // Generate new session ID
+        // Each foreground transition is a new session
         sessionID = UUID()
         
-        // Track foreground event
-        await trackEvent("app_foreground", properties: nil)
+        guard let eventCollector = eventCollector else { return }
+        
+        do {
+            // session_start so the live dashboard picks up the new session
+            let sessionStart = Event(
+                type: .sessionStart,
+                sessionID: sessionID,
+                properties: [
+                    "app_version": AppInfo.version,
+                    "os_version": DeviceInfo.osVersion,
+                    "device_model": DeviceInfo.deviceModel
+                ]
+            )
+            try await eventCollector.collect(sessionStart)
+
+            let foreground = Event(
+                type: .appForeground,
+                sessionID: sessionID
+            )
+            try await eventCollector.collect(foreground)
+        } catch {
+            handleError(error)
+        }
     }
     
     // MARK: - Screen Tracking
