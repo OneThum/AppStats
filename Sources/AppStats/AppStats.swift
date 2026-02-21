@@ -91,10 +91,18 @@ public final class AppStats {
     /// to force an immediate flush (e.g., before the app terminates).
     public static func flush() {
         guard let instance = shared else { return }
-        
         Task {
             await instance.flushEvents()
         }
+    }
+    
+    /// Async variant of flush — awaits completion of the network send.
+    ///
+    /// Prefer this form when calling from an async context (e.g., `.background` scene
+    /// phase handler) so the flush finishes before the OS suspends the app.
+    public static func flushAsync() async {
+        guard let instance = shared else { return }
+        await instance.flushEvents()
     }
     
     /// Set a custom user property that will be included with all events.
@@ -333,14 +341,15 @@ public final class AppStats {
     // MARK: - Timer
     
     private func startFlushTimer() {
-        Timer.scheduledTimer(
-            withTimeInterval: configuration.flushInterval,
-            repeats: true
-        ) { [weak self] _ in
+        // Must use .common run loop mode so the timer fires even during active touch
+        // interactions (UITrackingRunLoopMode). Without this, the timer is silently
+        // suppressed during gameplay in touch-heavy apps.
+        let timer = Timer(timeInterval: configuration.flushInterval, repeats: true) { [weak self] _ in
             Task {
                 await self?.flushEvents()
             }
         }
+        RunLoop.main.add(timer, forMode: .common)
     }
     
     // MARK: - Error Handling
