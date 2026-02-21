@@ -20,14 +20,14 @@ Add AppStats to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/OneThum/AppStats.git", from: "1.0.2")
+    .package(url: "https://github.com/OneThum/AppStats.git", from: "1.0.4")
 ]
 ```
 
 Or in Xcode:
 1. File → Add Package Dependencies
 2. Enter: `https://github.com/OneThum/AppStats.git`
-3. Select version: `1.0.2` or later
+3. Select version: `1.0.4` or later
 
 ## Quick Start
 
@@ -143,13 +143,29 @@ AppStats.setUserProperty("theme", value: "dark")
 Force an immediate flush of queued events:
 
 ```swift
+// Fire-and-forget (non-async contexts)
 AppStats.flush()
+
+// Awaitable — use this in async contexts so the flush completes
+// before the OS can suspend your app (e.g. .background scene phase)
+await AppStats.flushAsync()
 ```
 
-Useful in:
-- `applicationWillTerminate`
-- Before logging out
-- After critical events
+Recommended usage:
+
+```swift
+// SwiftUI — flush when app enters background
+.onChange(of: scenePhase) { _, phase in
+    if phase == .background {
+        Task { await AppStats.flushAsync() }
+    }
+}
+
+// UIKit — flush before termination
+func applicationWillTerminate(_ application: UIApplication) {
+    Task { await AppStats.flushAsync() }
+}
+```
 
 ## Configuration Options
 
@@ -266,9 +282,10 @@ func application(_ application: UIApplication,
 
 1. Check your API key is correct
 2. Ensure you have network connectivity
-3. Check Xcode console for `[AppStats]` logs (debug builds only)
+3. Check Xcode console for `[AppStats]` log messages — errors are printed in all builds (debug and release)
 4. Verify the app bundle ID matches your AppStats account
 5. Wait 30-60 seconds after events are tracked (default flush interval)
+6. For touch-heavy apps: the SDK uses `.common` run loop mode so the auto-flush timer fires during active user interaction
 
 ### Build errors
 
@@ -301,7 +318,8 @@ The SDK is resilient and handles backend issues gracefully:
 - Events queue locally (up to 500 events, 10MB limit)
 - Automatic retry with exponential backoff
 - Circuit breaker prevents battery drain
-- After 5 consecutive errors, SDK self-disables to protect your app
+- Transient network and server errors (5xx, timeouts) do **not** count toward the disable threshold — the SDK keeps retrying
+- Only repeated authentication or configuration errors (401/403) trigger the kill switch, after 10 consecutive failures
 - **Your app will never crash due to AppStats issues**
 
 ### Can I use AppStats in multiple apps?
