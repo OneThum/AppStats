@@ -95,7 +95,7 @@ public struct Event: Codable, Sendable {
         case id
         case timestamp
         case type = "event_type"
-        case name
+        case name = "event_name"
         case sessionID = "session_id"
         case screenName = "screen_name"
         case appVersion = "app_version"

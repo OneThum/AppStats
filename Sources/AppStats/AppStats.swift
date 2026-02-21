@@ -346,44 +346,54 @@ public final class AppStats {
     // MARK: - Error Handling
     
     private func handleError(_ error: Error) {
-        errorCount += 1
-        
-        // Provide specific error messages based on error type
-        if let urlError = error as? URLError {
-            switch urlError.code {
-            case .timedOut:
-                Logger.error("Request timed out - check network connection")
-            case .notConnectedToInternet:
-                Logger.error("No internet connection - events will be queued")
-            case .cannotConnectToHost:
-                Logger.error("Cannot connect to server - will retry later")
-            case .networkConnectionLost:
-                Logger.error("Network connection lost - will retry")
-            case .dnsLookupFailed:
-                Logger.error("DNS lookup failed - check network settings")
-            default:
-                Logger.error("Network error: \(urlError.localizedDescription)")
-            }
-        } else if let networkError = error as? NetworkError {
+        if let networkError = error as? NetworkError {
             switch networkError {
             case .inBackoff:
-                Logger.error("In backoff mode due to repeated failures")
+                Logger.warning("In backoff mode due to repeated failures - will retry automatically")
+                return // Don't count backoff as a hard error
+            case .clientError(let code) where code == 401 || code == 403:
+                // Auth errors are configuration problems - count them
+                errorCount += 1
+                Logger.error("Auth error \(code) - check API key: \(configuration.apiKey.prefix(12))...")
             case .clientError(let code):
-                Logger.error("Client error \(code) - check API key configuration")
+                // Other 4xx - log but don't count as fatal
+                Logger.warning("Client error \(code) - events may be malformed")
+                return
             case .serverError(let code):
-                Logger.error("Server error \(code) - service may be unavailable")
+                // Server errors are transient - don't count against kill switch
+                Logger.warning("Server error \(code) - service may be temporarily unavailable")
+                return
             case .compressionFailed:
+                errorCount += 1
                 Logger.error("Failed to compress event data")
             default:
                 Logger.error("AppStats error: \(error)")
+                return
             }
+        } else if let urlError = error as? URLError {
+            switch urlError.code {
+            case .timedOut:
+                Logger.warning("Request timed out - check network connection")
+            case .notConnectedToInternet:
+                Logger.warning("No internet connection - events will be retried")
+            case .cannotConnectToHost:
+                Logger.warning("Cannot connect to server - will retry later")
+            case .networkConnectionLost:
+                Logger.warning("Network connection lost - will retry")
+            case .dnsLookupFailed:
+                Logger.warning("DNS lookup failed - check network settings")
+            default:
+                Logger.warning("Network error: \(urlError.localizedDescription)")
+            }
+            // Network errors are transient - don't count against kill switch
+            return
         } else {
             Logger.error("AppStats error: \(error)")
         }
         
-        // Kill switch: disable after 5 consecutive errors
-        if errorCount >= 5 {
-            Logger.error("AppStats disabled due to repeated errors")
+        // Only disable after repeated auth/compression failures (not transient network issues)
+        if errorCount >= 10 {
+            Logger.error("AppStats disabled after \(errorCount) consecutive auth/config errors - check API key")
             isDisabled = true
         }
     }
@@ -427,9 +437,8 @@ private enum Logger {
         #endif
     }
     
+    // Errors are always logged (even in release) so misconfiguration is visible
     static func error(_ message: String) {
-        #if DEBUG
         print("[AppStats] ❌ \(message)")
-        #endif
     }
 }
